@@ -4,16 +4,19 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Net.NetworkInformation;
 using System.Windows.Forms;
+using System.Diagnostics;
 
 namespace CUHKSelfCheckLauncher
 {
 	public static class Config
     {
-        public const string INI_FILE_PATH = @"\config.ini";
-        public const string RESOURCES_PATH = @"\resources\";
+        public const string APP_NAME = @"SCLauncher";
+        public const string INI_FILE_PATH = @"config.ini";
+        public const string RESOURCES_PATH = @"resources\";
 
         public const string INI_SECT_SELF_CHECK_CONFIG = @"3M Self Check";
         public const string INI_KEY_SELF_CHECK_BIN_PATH = @"BIN_PATH";
+        public const string INI_KEY_SELF_CHECK_WEB_ADMIN_URL = @"WEB_ADMIN_URL";
         public const string INI_KEY_SELF_CHECK_AUTH_DISABLED_SMC = @"AUTH_DISABLED_SMC";
         public const string INI_KEY_SELF_CHECK_AUTH_CUHKLOGIN_SMC = @"AUTH_CUHKLOGIN_SMC";
         public const string INI_KEY_SELF_CHECK_AUTH_MODE = @"AUTH_MODE";
@@ -36,6 +39,7 @@ namespace CUHKSelfCheckLauncher
 
         static string scLauncherPath;
         static string binPath;
+        static string webAdminUrl;
         static string authDisabledSmc;
         static string authCUHKLoginSmc;
         static string authMode;
@@ -51,10 +55,18 @@ namespace CUHKSelfCheckLauncher
                 scLauncherPath = AppDomain.CurrentDomain.BaseDirectory;
                 if (!scLauncherPath.EndsWith(@"\"))
                     scLauncherPath = scLauncherPath + @"\";
+                
+                TraceListener traceListener = new TextWriterTraceListener(scLauncherPath + APP_NAME + ".log");
+                traceListener.TraceOutputOptions |= TraceOptions.DateTime;
+                traceListener.TraceOutputOptions |= TraceOptions.Callstack;
+                Trace.Listeners.Add(traceListener);
+                Trace.AutoFlush = true;
 
                 binPath = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_BIN_PATH, scLauncherPath + INI_FILE_PATH);
                 if (!binPath.EndsWith(@"\"))
                     binPath = binPath + @"\";
+                
+                webAdminUrl = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_WEB_ADMIN_URL, scLauncherPath + INI_FILE_PATH);
 
                 authDisabledSmc = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_DISABLED_SMC, scLauncherPath + INI_FILE_PATH);
                 authCUHKLoginSmc = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_CUHKLOGIN_SMC, scLauncherPath + INI_FILE_PATH);
@@ -112,6 +124,11 @@ namespace CUHKSelfCheckLauncher
 
                 return;
             }
+        }
+
+        public static string GetWebAdminUrl()
+        {
+            return webAdminUrl;
         }
 
         public static string GetSTunnelExe()

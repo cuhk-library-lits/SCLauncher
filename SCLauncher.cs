@@ -1,3 +1,4 @@
+#define TRACE
 using System;
 using System.Drawing;
 using System.Windows.Forms;
@@ -36,21 +37,28 @@ namespace CUHKSelfCheckLauncher
         {
             try
             {
-                prepareTrayIcon();
-                systemsLaunch();
-                heartbeatThread = new Thread(new ThreadStart(heartbeat));
+                PrepareTrayIcon();
+                SystemsLaunch();
+                heartbeatThread = new Thread(new ThreadStart(Heartbeat));
                 heartbeatThread.Start();
             }
             catch (Exception e)
             {
                 MessageBox.Show(e.ToString());
-                exit();
+                Exit();
             }
         }
 
-        private void systemsLaunch()
+        private void SystemsLaunch()
         {
-            Config.SetupSelfCheckAuthMode();
+            try
+            {
+                Config.SetupSelfCheckAuthMode();
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError(e.ToString());
+            }
             
             // Reload stunnel
             Config.SetupSTunnel();
@@ -80,37 +88,33 @@ namespace CUHKSelfCheckLauncher
                     appProc.StartInfo.UseShellExecute = false;
                     appProc.Start();
                 }
-                catch (System.Exception)
+                catch (Exception e)
                 {
-                    // Do Nothing
+                    Trace.TraceError(e.ToString());
                 }
             }
         }
 
-        private void killIEProcesses()
+        private void KillIEProcesses()
         {
-            ieProcessChains.Clear();
+            bool webAdminInFocus = false;
             List<Process> invalidIEProcesses = new List<Process>();
             foreach (var process in Process.GetProcessesByName(IE_PROCESS_NAME))
             {
-                ieProcessChains.addProcess(process.Id, ParentProcessUtilities.GetParentProcess(process.Id).Id);
-                invalidIEProcesses.Add(process);
+                string browserURL = UIAutomationUtil.GetInternetExplorerUrl(process);
+                if (!String.IsNullOrEmpty(browserURL) && browserURL.StartsWith(Config.GetWebAdminUrl()))
+                    webAdminInFocus = true;
             }
-            foreach (List<int> ieProcessChain in ieProcessChains.GetProcessChains())
+            if (!webAdminInFocus)
             {
-                if (PATRON_UI_PROCESS_NAME.Equals(Process.GetProcessById(ieProcessChain[0]).ProcessName))
+                foreach (var process in Process.GetProcessesByName(IE_PROCESS_NAME))
                 {
-                    for (int i = 1; i < ieProcessChain.Count; i++)
-                        invalidIEProcesses.Remove(Process.GetProcessById(ieProcessChain[i]));
+                    process.Kill();
                 }
-            }
-            foreach (Process invalidIEProcess in invalidIEProcesses)
-            {
-                invalidIEProcess.Kill();
             }
         }
 
-        private void turnOffAllLockKeys()
+        private void TurnOffAllLockKeys()
         {
             LockKeyUtil.CapslockOff();
             LockKeyUtil.NumlockOff();
@@ -118,7 +122,7 @@ namespace CUHKSelfCheckLauncher
         }
 
         private int screenShotInterval = 30;
-        private void saveScreenShot()
+        private void SaveScreenShot()
         {
             if (screenShotInterval > 0)
             {
@@ -129,30 +133,30 @@ namespace CUHKSelfCheckLauncher
             screenShotInterval = 30;
         }
 
-        private void doHeartbeat()
+        private void DoHeartbeat()
         {
             try
             {
-                turnOffAllLockKeys();
-                killIEProcesses();
-                saveScreenShot();
+                TurnOffAllLockKeys();
+                KillIEProcesses();
+                SaveScreenShot();
             }
-            catch (System.Exception)
+            catch (Exception e)
             {
-                // Do Nothing
+                Trace.TraceError(e.ToString());
             }
         }
 
-        private void heartbeat()
+        private void Heartbeat()
         {
             while(!stopHeartbeat)
             {
-                doHeartbeat();
+                DoHeartbeat();
                 Thread.Sleep(secInterval);
             }
         }
 
-        private void exit()
+        private void Exit()
         {
             stopHeartbeat = true;
             if (heartbeatThread.IsAlive)
@@ -161,7 +165,7 @@ namespace CUHKSelfCheckLauncher
             mutex.ReleaseMutex();
         }
 
-        protected void prepareTrayIcon()
+        protected void PrepareTrayIcon()
         {
             trayMenu = new ContextMenu();
             trayMenu.MenuItems.Add("Exit", OnExit);
@@ -182,7 +186,7 @@ namespace CUHKSelfCheckLauncher
 
         private void OnExit(object sender, EventArgs e)
         {
-            exit();
+            Exit();
         }
 
         protected override void Dispose(bool isDisposing)

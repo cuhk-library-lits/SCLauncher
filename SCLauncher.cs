@@ -101,7 +101,7 @@ namespace CUHKSelfCheckLauncher
             foreach (var process in Process.GetProcessesByName(IE_PROCESS_NAME))
             {
                 string browserTabURL = UIAutomationUtil.GetIEKioskUrl(process);
-                if (!String.IsNullOrEmpty(browserTabURL) && browserTabURL.StartsWith(GetWebAdminUrl))
+                if (!String.IsNullOrEmpty(browserTabURL) && browserTabURL.StartsWith(Config.GetWebAdminUrl()))
                 {
                     webAdminInUse = true;
                     break;

@@ -97,21 +97,24 @@ namespace CUHKSelfCheckLauncher
 
         private void KillIEProcesses()
         {
-            bool webAdminInFocus = false;
-            List<Process> invalidIEProcesses = new List<Process>();
+            bool webAdminInUse = false;
             foreach (var process in Process.GetProcessesByName(IE_PROCESS_NAME))
             {
-                string browserURL = UIAutomationUtil.GetInternetExplorerUrl(process);
-                if (!String.IsNullOrEmpty(browserURL) && browserURL.StartsWith(Config.GetWebAdminUrl()))
-                    webAdminInFocus = true;
+                string browserTabURL = UIAutomationUtil.GetIEKioskUrl(process);
+                if (!String.IsNullOrEmpty(browserTabURL) && browserTabURL.StartsWith(GetWebAdminUrl))
+                {
+                    webAdminInUse = true;
+                    break;
+                }
             }
-            if (!webAdminInFocus)
+            if (!webAdminInUse)
             {
                 foreach (var process in Process.GetProcessesByName(IE_PROCESS_NAME))
                 {
                     process.Kill();
                 }
             }
+            
         }
 
         private void TurnOffAllLockKeys()

@@ -6,26 +6,23 @@ namespace CUHKSelfCheckLauncher
 {
     public class UIAutomationUtil
     {
-        public static void CloseMainWindow (Process process)
+        public static string GetIEKioskUrl (Process process)
         {
             if (process == null)
                 throw new ArgumentNullException ("process");
 
             if (process.MainWindowHandle == IntPtr.Zero)
-                return;
+                return null;
 
             AutomationElement element = AutomationElement.FromHandle (process.MainWindowHandle);
-            WindowPattern windowPattern = null;
-            try
-            {
-                windowPattern = element.GetCurrentPattern(WindowPattern.Pattern) as WindowPattern;
-                if (windowPattern.WaitForInputIdle(10000))
-                    windowPattern.Close();
-            }
-            catch (InvalidOperationException)
-            {
-                // object doesn't support the WindowPattern control pattern
-            }
+            if (element == null)
+                return null;
+
+            AutomationElement tabWindow = element.FindFirst (TreeScope.Descendants, new PropertyCondition (AutomationElement.ClassNameProperty, "TabWindowClass"));
+            if (tabWindow == null)
+                return "null";
+
+            return tabWindow.Current.Name;
         }
         
         public static string GetChromeUrl (Process process)

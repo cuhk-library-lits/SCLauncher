@@ -52,25 +52,25 @@ namespace CUHKSelfCheckLauncher
                 if (!scLauncherPath.EndsWith(@"\"))
                     scLauncherPath = scLauncherPath + @"\";
 
-                binPath = IniFileHelper.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_BIN_PATH, scLauncherPath + INI_FILE_PATH);
+                binPath = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_BIN_PATH, scLauncherPath + INI_FILE_PATH);
                 if (!binPath.EndsWith(@"\"))
                     binPath = binPath + @"\";
 
-                authDisabledSmc = IniFileHelper.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_DISABLED_SMC, scLauncherPath + INI_FILE_PATH);
-                authCUHKLoginSmc = IniFileHelper.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_CUHKLOGIN_SMC, scLauncherPath + INI_FILE_PATH);
+                authDisabledSmc = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_DISABLED_SMC, scLauncherPath + INI_FILE_PATH);
+                authCUHKLoginSmc = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_CUHKLOGIN_SMC, scLauncherPath + INI_FILE_PATH);
 
-                authMode =  IniFileHelper.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_MODE, scLauncherPath + INI_FILE_PATH);
+                authMode =  IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_MODE, scLauncherPath + INI_FILE_PATH);
                 if (String.IsNullOrEmpty(authMode))
                     authMode = SELF_CHECK_AUTH_MODE_DISABLED;
                 
-                stunnelPath = IniFileHelper.ReadValue(INI_SECT_STUNNEL, INI_KEY_STUNNEL_PATH, scLauncherPath + INI_FILE_PATH);
+                stunnelPath = IniFileUtil.ReadValue(INI_SECT_STUNNEL, INI_KEY_STUNNEL_PATH, scLauncherPath + INI_FILE_PATH);
                 if (!stunnelPath.EndsWith(@"\"))
                     stunnelPath = stunnelPath + @"\";
                 
                 stunnelBinPath = stunnelPath + @"bin\";
                 stunnelConfigPath = stunnelPath + @"config\";
 
-                string[] launchKeyValues = IniFileHelper.ReadKeyValuePairs(INI_SECT_LAUNCH, scLauncherPath + INI_FILE_PATH);
+                string[] launchKeyValues = IniFileUtil.ReadKeyValuePairs(INI_SECT_LAUNCH, scLauncherPath + INI_FILE_PATH);
                 for (int i=0; launchKeyValues != null && i<launchKeyValues.Length; i++)
                 {
                     if (String.IsNullOrEmpty(launchKeyValues[i]))

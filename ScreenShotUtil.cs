@@ -7,7 +7,7 @@ using System.Drawing.Drawing2D;
 
 namespace CUHKSelfCheckLauncher
 {
-    public class ScreenShotHelper
+    public class ScreenShotUtil
     {
         public static void SaveScreenShots(string saveFilePath)
         {

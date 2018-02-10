@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace CUHKSelfCheckLauncher
 {
-    public class LockKeyHelper
+    public class LockKeyUtil
     {
         [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true, CallingConvention = CallingConvention.Winapi)]
         static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);

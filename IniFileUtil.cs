@@ -4,7 +4,7 @@ using System.Text;
 
 namespace CUHKSelfCheckLauncher
 {
-	public static class IniFileHelper
+	public static class IniFileUtil
 	{
 		public static int capacity = 512;
 

@@ -112,9 +112,9 @@ namespace CUHKSelfCheckLauncher
 
         private void turnOffAllLockKeys()
         {
-            LockKeyHelper.CapslockOff();
-            LockKeyHelper.NumlockOff();
-            LockKeyHelper.ScrolllockOff();
+            LockKeyUtil.CapslockOff();
+            LockKeyUtil.NumlockOff();
+            LockKeyUtil.ScrolllockOff();
         }
 
         private int screenShotInterval = 30;
@@ -125,7 +125,7 @@ namespace CUHKSelfCheckLauncher
                 screenShotInterval--;
                 return;
             }
-            ScreenShotHelper.SaveScreenShots(Config.GetScreenshotPath());
+            ScreenShotUtil.SaveScreenShots(Config.GetScreenshotPath());
             screenShotInterval = 30;
         }
 

@@ -97,24 +97,15 @@ namespace CUHKSelfCheckLauncher
 
         private void KillIEProcesses()
         {
-            bool webAdminInUse = false;
-            foreach (var process in Process.GetProcessesByName(IE_PROCESS_NAME))
-            {
-                string browserTabURL = UIAutomationUtil.GetIEKioskUrl(process);
-                if (!String.IsNullOrEmpty(browserTabURL) && browserTabURL.StartsWith(Config.GetWebAdminUrl()))
-                {
-                    webAdminInUse = true;
-                    break;
-                }
-            }
-            if (!webAdminInUse)
+            String disableIEProcess = Config.GetDisableIEProcess();
+            if (String.IsNullOrEmpty(disableIEProcess))
+                return;
+
+            if (Process.GetProcessesByName(disableIEProcess).Length > 0)
             {
                 foreach (var process in Process.GetProcessesByName(IE_PROCESS_NAME))
-                {
                     process.Kill();
-                }
             }
-            
         }
 
         private void TurnOffAllLockKeys()
@@ -132,7 +123,14 @@ namespace CUHKSelfCheckLauncher
                 screenShotInterval--;
                 return;
             }
-            ScreenShotUtil.SaveScreenShots(Config.GetScreenshotPath());
+            try
+            {
+                ScreenShotUtil.SaveScreenShots(Config.GetScreenshotPath());
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError(e.ToString());
+            }
             screenShotInterval = 30;
         }
 

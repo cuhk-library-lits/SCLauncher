@@ -16,7 +16,7 @@ namespace CUHKSelfCheckLauncher
 
         public const string INI_SECT_SELF_CHECK_CONFIG = @"3M Self Check";
         public const string INI_KEY_SELF_CHECK_BIN_PATH = @"BIN_PATH";
-        public const string INI_KEY_SELF_CHECK_WEB_ADMIN_URL = @"WEB_ADMIN_URL";
+        public const string INI_KEY_SELF_CHECK_DISABLE_IE_PROCESS = @"DISABLE_IE_PROCESS";
         public const string INI_KEY_SELF_CHECK_AUTH_DISABLED_SMC = @"AUTH_DISABLED_SMC";
         public const string INI_KEY_SELF_CHECK_AUTH_CUHKLOGIN_SMC = @"AUTH_CUHKLOGIN_SMC";
         public const string INI_KEY_SELF_CHECK_AUTH_MODE = @"AUTH_MODE";
@@ -39,7 +39,7 @@ namespace CUHKSelfCheckLauncher
 
         static string scLauncherPath;
         static string binPath;
-        static string webAdminUrl;
+        static string disableIEProcess;
         static string authDisabledSmc;
         static string authCUHKLoginSmc;
         static string authMode;
@@ -66,7 +66,7 @@ namespace CUHKSelfCheckLauncher
                 if (!binPath.EndsWith(@"\"))
                     binPath = binPath + @"\";
                 
-                webAdminUrl = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_WEB_ADMIN_URL, scLauncherPath + INI_FILE_PATH);
+                disableIEProcess = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_DISABLE_IE_PROCESS, scLauncherPath + INI_FILE_PATH);
 
                 authDisabledSmc = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_DISABLED_SMC, scLauncherPath + INI_FILE_PATH);
                 authCUHKLoginSmc = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_CUHKLOGIN_SMC, scLauncherPath + INI_FILE_PATH);
@@ -126,9 +126,9 @@ namespace CUHKSelfCheckLauncher
             }
         }
 
-        public static string GetWebAdminUrl()
+        public static string GetDisableIEProcess()
         {
-            return webAdminUrl;
+            return disableIEProcess;
         }
 
         public static string GetSTunnelExe()

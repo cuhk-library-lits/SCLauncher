@@ -15,14 +15,18 @@ namespace CUHKSelfCheckLauncher
         static Mutex mutex = new Mutex (false, "CUHKSelfCheckLauncher.SCLauncher");
         const string IE_PROCESS_NAME = @"iexplore";
         const string PATRON_UI_PROCESS_NAME = @"PatronUI";
+        const int HEARTBEAT_INTERVAL = 1000;
+        const int SCREEN_SHOT_INTERVAL = 30;
+        const int REBOOT_CHECK_INTERVAL = 60;
 
         private NotifyIcon trayIcon;
         private ContextMenu trayMenu;
-        private ProcessChain ieProcessChains = new ProcessChain();
-
         private Thread heartbeatThread = null;
+
         private bool stopHeartbeat = false;
-        private int secInterval = 1000;
+        private int screenShotCounter = SCREEN_SHOT_INTERVAL;
+        private int rebootCheckCounter = REBOOT_CHECK_INTERVAL;
+
 
         [STAThread]
         public static void Main()
@@ -67,32 +71,18 @@ namespace CUHKSelfCheckLauncher
             {
                 if (Config.INI_SECT_STUNNEL == service.ServiceName && service.Status ==  ServiceControllerStatus.Running)
                 {
-                    Process stunnelProc = new System.Diagnostics.Process();
-                    stunnelProc.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                    stunnelProc.StartInfo.FileName = Config.GetSTunnelExe();
-                    stunnelProc.StartInfo.Arguments = @" -reload -quiet";
-                    stunnelProc.StartInfo.UseShellExecute = false;
-                    stunnelProc.Start();
+                    SystemUtil.StartProcess(Config.GetSTunnelExe(), @" -reload -quiet", true);
                     break;
                 }
             }
 
+            // Set launch time
+            SystemUtil.Init();
+
             // Autolaunch
             List<string> launchAppPaths = Config.GetLaunchApps();
             foreach (string appPath in launchAppPaths)
-            {              
-                try
-                {
-                    Process appProc = new System.Diagnostics.Process();
-                    appProc.StartInfo.FileName = appPath;
-                    appProc.StartInfo.UseShellExecute = false;
-                    appProc.Start();
-                }
-                catch (Exception e)
-                {
-                    Trace.TraceError(e.ToString());
-                }
-            }
+                SystemUtil.StartProcess(appPath, null, false);
         }
 
         private void KillIEProcesses()
@@ -115,23 +105,34 @@ namespace CUHKSelfCheckLauncher
             LockKeyUtil.ScrolllockOff();
         }
 
-        private int screenShotInterval = 30;
         private void SaveScreenShot()
         {
-            if (screenShotInterval > 0)
-            {
-                screenShotInterval--;
+            if (screenShotCounter++ < SCREEN_SHOT_INTERVAL)
                 return;
-            }
             try
             {
-                ScreenShotUtil.SaveScreenShots(Config.GetScreenshotPath());
+                SystemUtil.SaveScreenShots(Config.GetScreenshotPath());
             }
             catch (Exception e)
             {
                 Trace.TraceError(e.ToString());
             }
-            screenShotInterval = 30;
+            screenShotCounter = 0;
+        }
+
+        private void CheckDailyReboot()
+        {
+            if (rebootCheckCounter++ < REBOOT_CHECK_INTERVAL)
+                return;
+            try
+            {
+                SystemUtil.DailyReboot();
+            }
+            catch (Exception e)
+            {
+                Trace.TraceError(e.ToString());
+            }
+            rebootCheckCounter = 0;
         }
 
         private void DoHeartbeat()
@@ -141,6 +142,7 @@ namespace CUHKSelfCheckLauncher
                 TurnOffAllLockKeys();
                 KillIEProcesses();
                 SaveScreenShot();
+                CheckDailyReboot();
             }
             catch (Exception e)
             {
@@ -153,7 +155,7 @@ namespace CUHKSelfCheckLauncher
             while(!stopHeartbeat)
             {
                 DoHeartbeat();
-                Thread.Sleep(secInterval);
+                Thread.Sleep(HEARTBEAT_INTERVAL);
             }
         }
 

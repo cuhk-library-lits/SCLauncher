@@ -40,7 +40,7 @@ namespace CUHKSelfCheckLauncher
 			return result;
 		}
 
-		public static string ReadValue(string section, string key, string filePath, string defaultValue = "")
+		public static string ReadValue(string section, string key, string filePath, string defaultValue)
 		{
 			var value = new StringBuilder(capacity);
 			GetPrivateProfileString(section, key, defaultValue, value, value.Capacity, filePath);

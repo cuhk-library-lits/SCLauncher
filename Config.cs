@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Net.NetworkInformation;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Globalization;
 
 namespace CUHKSelfCheckLauncher
 {
@@ -27,8 +28,9 @@ namespace CUHKSelfCheckLauncher
         public const string INI_SECT_LAUNCH = @"launch";
         public const string INI_KEY_APP_PATH = @"APP_PATH";
 
-        public const string INI_SECT_SCREENSHOTS = @"screenshots";
-        public const string INI_KEY_SCREENSHOT_PATH = @"PATH";
+        public const string INI_SECT_SYSTEM = @"system";
+        public const string INI_KEY_DAILY_REBOOT_TIME_HHMM = @"DAILY_REBOOT_TIME_HHMM";
+        public const string INI_KEY_SCREENSHOT_DPI_SCALING = @"SCREENSHOT_DPI_SCALING";
 
         public const string SELF_CHECK_AUTH_MODE_DISABLED = @"DISABLED";
         public const string SELF_CHECK_AUTH_MODE_CUHK_LOGIN = @"CUHKLOGIN";
@@ -37,16 +39,18 @@ namespace CUHKSelfCheckLauncher
 
         public const string SCREENSHOTS_FOLDER = @"screenshots";
 
-        static string scLauncherPath;
-        static string binPath;
-        static string disableIEProcess;
-        static string authDisabledSmc;
-        static string authCUHKLoginSmc;
-        static string authMode;
-        static string stunnelPath;
-        static string stunnelBinPath;
-        static string stunnelConfigPath;
+        static string scLauncherPath = null;
+        static string binPath = null;
+        static string disableIEProcess = null;
+        static string authDisabledSmc = null;
+        static string authCUHKLoginSmc = null;
+        static string authMode = null;
+        static string stunnelPath = null;
+        static string stunnelBinPath = null;
+        static string stunnelConfigPath = null;
         static List<string> launchAppPaths = new List<string>();
+        static DateTime rebootDateTime = DateTime.ParseExact("19000101000000", "yyyyMMddHHmmss", CultureInfo.InvariantCulture);
+        static double screenshotDpiScaling = 1.0;
 
         static Config()
         {
@@ -62,20 +66,20 @@ namespace CUHKSelfCheckLauncher
                 Trace.Listeners.Add(traceListener);
                 Trace.AutoFlush = true;
 
-                binPath = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_BIN_PATH, scLauncherPath + INI_FILE_PATH);
+                binPath = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_BIN_PATH, scLauncherPath + INI_FILE_PATH, @"");
                 if (!binPath.EndsWith(@"\"))
                     binPath = binPath + @"\";
                 
-                disableIEProcess = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_DISABLE_IE_PROCESS, scLauncherPath + INI_FILE_PATH);
+                disableIEProcess = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_DISABLE_IE_PROCESS, scLauncherPath + INI_FILE_PATH, @"");
 
-                authDisabledSmc = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_DISABLED_SMC, scLauncherPath + INI_FILE_PATH);
-                authCUHKLoginSmc = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_CUHKLOGIN_SMC, scLauncherPath + INI_FILE_PATH);
+                authDisabledSmc = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_DISABLED_SMC, scLauncherPath + INI_FILE_PATH, @"");
+                authCUHKLoginSmc = IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_CUHKLOGIN_SMC, scLauncherPath + INI_FILE_PATH, @"");
 
-                authMode =  IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_MODE, scLauncherPath + INI_FILE_PATH);
+                authMode =  IniFileUtil.ReadValue(INI_SECT_SELF_CHECK_CONFIG, INI_KEY_SELF_CHECK_AUTH_MODE, scLauncherPath + INI_FILE_PATH, @"");
                 if (String.IsNullOrEmpty(authMode))
                     authMode = SELF_CHECK_AUTH_MODE_DISABLED;
                 
-                stunnelPath = IniFileUtil.ReadValue(INI_SECT_STUNNEL, INI_KEY_STUNNEL_PATH, scLauncherPath + INI_FILE_PATH);
+                stunnelPath = IniFileUtil.ReadValue(INI_SECT_STUNNEL, INI_KEY_STUNNEL_PATH, scLauncherPath + INI_FILE_PATH, @"");
                 if (!stunnelPath.EndsWith(@"\"))
                     stunnelPath = stunnelPath + @"\";
                 
@@ -94,6 +98,19 @@ namespace CUHKSelfCheckLauncher
                     if (INI_KEY_APP_PATH == key)
                         launchAppPaths.Add(value);
                 }
+
+                string dailyRebootTimeStr = IniFileUtil.ReadValue(INI_SECT_SYSTEM, INI_KEY_DAILY_REBOOT_TIME_HHMM, scLauncherPath + INI_FILE_PATH, @"");
+                if (!String.IsNullOrEmpty(dailyRebootTimeStr))
+                {
+                    string rebootDateTimeStr = DateTime.Now.ToString("yyyyMMdd");
+                    rebootDateTimeStr += dailyRebootTimeStr;
+                    rebootDateTimeStr += "00";
+                    rebootDateTime = DateTime.ParseExact(rebootDateTimeStr, "yyyyMMddHHmmss", CultureInfo.InvariantCulture);
+                }
+
+                string screenshotDpiScalingStr = IniFileUtil.ReadValue(INI_SECT_SYSTEM, INI_KEY_SCREENSHOT_DPI_SCALING, scLauncherPath + INI_FILE_PATH, @"");
+                screenshotDpiScaling = double.Parse(screenshotDpiScalingStr, CultureInfo.InvariantCulture.NumberFormat);
+                    
             }
             catch (System.Exception)
             {
@@ -160,6 +177,16 @@ namespace CUHKSelfCheckLauncher
         public static string GetScreenshotPath()
         {
             return scLauncherPath + SCREENSHOTS_FOLDER;
+        }
+
+        public static DateTime GetRebootDateTime()
+        {
+            return rebootDateTime;
+        }
+
+        public static double GetScreenshotDpiScaling()
+        {
+            return screenshotDpiScaling;
         }
     }
 }

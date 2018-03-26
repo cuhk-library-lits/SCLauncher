@@ -55,6 +55,9 @@ namespace CUHKSelfCheckLauncher
             if(!Directory.Exists(saveFilePath))
                 Directory.CreateDirectory(saveFilePath);
 
+            System.GC.Collect();
+            System.GC.WaitForPendingFinalizers();
+
             int screenID = 1;
             foreach (Screen screen in Screen.AllScreens)
             {

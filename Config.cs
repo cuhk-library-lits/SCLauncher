@@ -29,6 +29,7 @@ namespace CUHKSelfCheckLauncher
         public const string INI_KEY_APP_PATH = @"APP_PATH";
 
         public const string INI_SECT_SYSTEM = @"system";
+        public const string INI_KEY_SHELL_PATH = @"SHELL_PATH";
         public const string INI_KEY_DAILY_REBOOT_TIME_HHMM = @"DAILY_REBOOT_TIME_HHMM";
         public const string INI_KEY_SCREENSHOT_DPI_SCALING = @"SCREENSHOT_DPI_SCALING";
 
@@ -37,7 +38,7 @@ namespace CUHKSelfCheckLauncher
         public const string PEM_FILE_NAME = @"client.pem";
         public const string STUNNEL_EXE_NAME = @"stunnel.exe";
 
-        public const string SCREENSHOTS_FOLDER = @"screenshots";
+        public const string WEB_FOLDER = @"web";
 
         static string scLauncherPath = null;
         static string binPath = null;
@@ -49,6 +50,7 @@ namespace CUHKSelfCheckLauncher
         static string stunnelBinPath = null;
         static string stunnelConfigPath = null;
         static List<string> launchAppPaths = new List<string>();
+        static string shellPath = null;
         static DateTime rebootDateTime = DateTime.ParseExact("19000101000000", "yyyyMMddHHmmss", CultureInfo.InvariantCulture);
         static double screenshotDpiScaling = 1.0;
 
@@ -59,8 +61,11 @@ namespace CUHKSelfCheckLauncher
                 scLauncherPath = AppDomain.CurrentDomain.BaseDirectory;
                 if (!scLauncherPath.EndsWith(@"\"))
                     scLauncherPath = scLauncherPath + @"\";
-                
-                TraceListener traceListener = new TextWriterTraceListener(scLauncherPath + APP_NAME + ".log");
+
+                string logPath = scLauncherPath + WEB_FOLDER;
+                if (!logPath.EndsWith(@"\"))
+                    logPath = logPath + @"\";
+                TraceListener traceListener = new TextWriterTraceListener(logPath + APP_NAME + ".log");
                 traceListener.TraceOutputOptions |= TraceOptions.DateTime;
                 traceListener.TraceOutputOptions |= TraceOptions.Callstack;
                 Trace.Listeners.Add(traceListener);
@@ -98,6 +103,8 @@ namespace CUHKSelfCheckLauncher
                     if (INI_KEY_APP_PATH == key)
                         launchAppPaths.Add(value);
                 }
+
+                shellPath = IniFileUtil.ReadValue(INI_SECT_SYSTEM, INI_KEY_SHELL_PATH, scLauncherPath + INI_FILE_PATH, @"");
 
                 string dailyRebootTimeStr = IniFileUtil.ReadValue(INI_SECT_SYSTEM, INI_KEY_DAILY_REBOOT_TIME_HHMM, scLauncherPath + INI_FILE_PATH, @"");
                 if (!String.IsNullOrEmpty(dailyRebootTimeStr))
@@ -174,9 +181,14 @@ namespace CUHKSelfCheckLauncher
             return launchAppPaths;
         }
 
-        public static string GetScreenshotPath()
+        public static string GetWebPath()
         {
-            return scLauncherPath + SCREENSHOTS_FOLDER;
+            return scLauncherPath + WEB_FOLDER;
+        }
+
+        public static string GetShellPath()
+        {
+            return shellPath;
         }
 
         public static DateTime GetRebootDateTime()

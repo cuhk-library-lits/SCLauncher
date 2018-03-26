@@ -1,8 +1,11 @@
 #define TRACE
+using System.Threading;
+using System.Windows.Forms;
+
 using System;
 using System.Drawing;
-using System.Windows.Forms;
-using System.Threading;
+
+
 using System.Diagnostics;
 using System.Collections.Generic;
 using System.ServiceProcess;
@@ -13,20 +16,13 @@ namespace CUHKSelfCheckLauncher
     public class SCLauncher : Form
     {
         static Mutex mutex = new Mutex (false, "CUHKSelfCheckLauncher.SCLauncher");
-        const string IE_PROCESS_NAME = @"iexplore";
-        const string PATRON_UI_PROCESS_NAME = @"PatronUI";
-        const int HEARTBEAT_INTERVAL = 1000;
-        const int SCREEN_SHOT_INTERVAL = 30;
-        const int REBOOT_CHECK_INTERVAL = 60;
+        const string SHELL_PROCESS_NAME = @"SCLauncherShell";
+        const int WATCHDOG_HEARTBEAT_INTERVAL = 30000;
 
         private NotifyIcon trayIcon;
         private ContextMenu trayMenu;
         private Thread heartbeatThread = null;
-
         private bool stopHeartbeat = false;
-        private int screenShotCounter = SCREEN_SHOT_INTERVAL;
-        private int rebootCheckCounter = REBOOT_CHECK_INTERVAL;
-
 
         [STAThread]
         public static void Main()
@@ -55,94 +51,30 @@ namespace CUHKSelfCheckLauncher
 
         private void SystemsLaunch()
         {
-            try
-            {
-                Config.SetupSelfCheckAuthMode();
-            }
-            catch (Exception e)
-            {
-                Trace.TraceError(e.ToString());
-            }
-            
-            // Reload stunnel
-            Config.SetupSTunnel();
-            ServiceController[] services = ServiceController.GetServices();
-            foreach(ServiceController service in services)
-            {
-                if (Config.INI_SECT_STUNNEL == service.ServiceName && service.Status ==  ServiceControllerStatus.Running)
-                {
-                    SystemUtil.StartProcess(Config.GetSTunnelExe(), @" -reload -quiet", true);
-                    break;
-                }
-            }
-
-            // Set launch time
-            SystemUtil.Init();
-
-            // Autolaunch
-            List<string> launchAppPaths = Config.GetLaunchApps();
-            foreach (string appPath in launchAppPaths)
-                SystemUtil.StartProcess(appPath, null, false);
+            SystemUtil.StartProcess(Config.GetShellPath(), null, true);
+            while(!ShellIsAlive())
+                Thread.Sleep(1000);
         }
 
-        private void KillIEProcesses()
+        private bool ShellIsAlive()
         {
-            String disableIEProcess = Config.GetDisableIEProcess();
-            if (String.IsNullOrEmpty(disableIEProcess))
-                return;
-
-            if (Process.GetProcessesByName(disableIEProcess).Length > 0)
-            {
-                foreach (var process in Process.GetProcessesByName(IE_PROCESS_NAME))
-                    process.Kill();
-            }
+            return Process.GetProcessesByName(SHELL_PROCESS_NAME).Length > 0;
         }
 
-        private void TurnOffAllLockKeys()
+        private void RebootOnShellExit()
         {
-            LockKeyUtil.CapslockOff();
-            LockKeyUtil.NumlockOff();
-            LockKeyUtil.ScrolllockOff();
-        }
-
-        private void SaveScreenShot()
-        {
-            if (screenShotCounter++ < SCREEN_SHOT_INTERVAL)
-                return;
-            try
+            if (!ShellIsAlive())
             {
-                SystemUtil.SaveScreenShots(Config.GetScreenshotPath());
+                Trace.TraceError("SCLauncherShell process terminated unexpectedly! Rebooting...");
+                SystemUtil.StartProcess(@"shutdown.exe", @" /r /f /t 0", true);
             }
-            catch (Exception e)
-            {
-                Trace.TraceError(e.ToString());
-            }
-            screenShotCounter = 0;
-        }
-
-        private void CheckDailyReboot()
-        {
-            if (rebootCheckCounter++ < REBOOT_CHECK_INTERVAL)
-                return;
-            try
-            {
-                SystemUtil.DailyReboot();
-            }
-            catch (Exception e)
-            {
-                Trace.TraceError(e.ToString());
-            }
-            rebootCheckCounter = 0;
         }
 
         private void DoHeartbeat()
         {
             try
             {
-                TurnOffAllLockKeys();
-                KillIEProcesses();
-                SaveScreenShot();
-                CheckDailyReboot();
+                RebootOnShellExit();
             }
             catch (Exception e)
             {
@@ -155,7 +87,7 @@ namespace CUHKSelfCheckLauncher
             while(!stopHeartbeat)
             {
                 DoHeartbeat();
-                Thread.Sleep(HEARTBEAT_INTERVAL);
+                Thread.Sleep(WATCHDOG_HEARTBEAT_INTERVAL);
             }
         }
 

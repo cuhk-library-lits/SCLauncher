@@ -67,19 +67,22 @@ namespace CUHKSelfCheckLauncher
                 screenRect.Height = (int)(screenRect.Height * scaling);
 
                 Bitmap bmpScreenshot = new Bitmap(screenRect.Width, screenRect.Height, PixelFormat.Format32bppArgb);
-                Graphics gfxScreenshot = Graphics.FromImage(bmpScreenshot);
-                gfxScreenshot.CopyFromScreen(screenRect.X, screenRect.Y, 0, 0, screenRect.Size, CopyPixelOperation.SourceCopy);
-                gfxScreenshot.SmoothingMode = SmoothingMode.AntiAlias;
-                gfxScreenshot.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                gfxScreenshot.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
-                RectangleF launchTimeRect = new RectangleF(0, bmpScreenshot.Height - 10, 130, 10);
-                gfxScreenshot.FillRectangle(Brushes.AliceBlue, launchTimeRect);
-                gfxScreenshot.DrawString("Start: " + launchDateTime.ToString("yyyy-MM-dd HH:mm:ss"), new Font("Tahoma", 7), Brushes.Black, launchTimeRect);
+                using (Graphics gfxScreenshot = Graphics.FromImage(bmpScreenshot))
+                {
+                    gfxScreenshot.CopyFromScreen(screenRect.X, screenRect.Y, 0, 0, screenRect.Size, CopyPixelOperation.SourceCopy);
+                    gfxScreenshot.SmoothingMode = SmoothingMode.AntiAlias;
+                    gfxScreenshot.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    gfxScreenshot.PixelOffsetMode = PixelOffsetMode.HighQuality;
 
-                RectangleF screenShotTimeRect = new RectangleF(bmpScreenshot.Width - 95, bmpScreenshot.Height - 10, 95, 10);
-                gfxScreenshot.FillRectangle(Brushes.AliceBlue, screenShotTimeRect);
-                gfxScreenshot.DrawString(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), new Font("Tahoma", 7), Brushes.Black, screenShotTimeRect);
+                    RectangleF launchTimeRect = new RectangleF(0, bmpScreenshot.Height - 10, 130, 10);
+                    gfxScreenshot.FillRectangle(Brushes.AliceBlue, launchTimeRect);
+                    gfxScreenshot.DrawString("Start: " + launchDateTime.ToString("yyyy-MM-dd HH:mm:ss"), new Font("Tahoma", 7), Brushes.Black, launchTimeRect);
+
+                    RectangleF screenShotTimeRect = new RectangleF(bmpScreenshot.Width - 95, bmpScreenshot.Height - 10, 95, 10);
+                    gfxScreenshot.FillRectangle(Brushes.AliceBlue, screenShotTimeRect);
+                    gfxScreenshot.DrawString(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"), new Font("Tahoma", 7), Brushes.Black, screenShotTimeRect);
+                }
                 
                 bmpScreenshot.Save(saveFilePath + screenID + ".png", ImageFormat.Png);
                 screenID++;

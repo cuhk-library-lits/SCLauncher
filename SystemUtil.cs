@@ -13,18 +13,18 @@ namespace CUHKSelfCheckLauncher
     public class SystemUtil
     {
         static DateTime launchDateTime;
-        static DateTime rebootDateTime;
+        static DateTime nextRebootDateTime;
 
         public static void Init()
         {
             launchDateTime = DateTime.Now;
-            rebootDateTime = Config.GetRebootDateTime();
+            nextRebootDateTime = Config.GetNextRebootDateTime();
         }
 
         public static void DailyReboot()
         {
             DateTime now = DateTime.Now;
-            if (launchDateTime < rebootDateTime && now >= rebootDateTime)
+            if (launchDateTime < nextRebootDateTime && now >= nextRebootDateTime)
                 StartProcess(@"shutdown.exe", @" /r /f /t 0", true);
         }
 

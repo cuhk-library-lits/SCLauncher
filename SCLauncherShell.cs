@@ -23,8 +23,8 @@ namespace CUHKSelfCheckLauncher
         private Thread heartbeatThread = null;
 
         private bool stopHeartbeat = false;
-        private int screenShotCounter = SCREEN_SHOT_INTERVAL;
-        private int rebootCheckCounter = REBOOT_CHECK_INTERVAL;
+        private int screenShotCounter = 0;
+        private int rebootCheckCounter = 0;
 
 
         [STAThread]

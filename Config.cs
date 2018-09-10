@@ -21,6 +21,9 @@ namespace CUHKSelfCheckLauncher
         public const string INI_KEY_SELF_CHECK_AUTH_DISABLED_SMC = @"AUTH_DISABLED_SMC";
         public const string INI_KEY_SELF_CHECK_AUTH_CUHKLOGIN_SMC = @"AUTH_CUHKLOGIN_SMC";
         public const string INI_KEY_SELF_CHECK_AUTH_MODE = @"AUTH_MODE";
+
+        public const string INI_SECT_SELF_RETURN_CONFIG = @"3M Self Return";
+        public const string INI_KEY_SELF_RETURN_CONFIG_SERVICE_NAME = @"CONFIG_SERVICE_NAME";
         
         public const string INI_SECT_STUNNEL = @"stunnel";
         public const string INI_KEY_STUNNEL_PATH = @"PATH";
@@ -40,18 +43,21 @@ namespace CUHKSelfCheckLauncher
 
         public const string WEB_FOLDER = @"web";
 
+        private const int GET_IP_RETRY = 10;
+
         static string scLauncherPath = null;
         static string binPath = null;
         static string disableIEProcess = null;
         static string authDisabledSmc = null;
         static string authCUHKLoginSmc = null;
         static string authMode = null;
+        static string bbConfigServiceName = null; // For Self-Return only
         static string stunnelPath = null;
         static string stunnelBinPath = null;
         static string stunnelConfigPath = null;
         static List<string> launchAppPaths = new List<string>();
         static string shellPath = null;
-        static DateTime rebootDateTime = DateTime.ParseExact("19000101000000", "yyyyMMddHHmmss", CultureInfo.InvariantCulture);
+        static DateTime nextRebootDateTime = DateTime.ParseExact("19000101000000", "yyyyMMddHHmmss", CultureInfo.InvariantCulture);
         static double screenshotDpiScaling = 1.0;
 
         static Config()
@@ -84,6 +90,8 @@ namespace CUHKSelfCheckLauncher
                 if (String.IsNullOrEmpty(authMode))
                     authMode = SELF_CHECK_AUTH_MODE_DISABLED;
                 
+                bbConfigServiceName = IniFileUtil.ReadValue(INI_SECT_SELF_RETURN_CONFIG, INI_KEY_SELF_RETURN_CONFIG_SERVICE_NAME, scLauncherPath + INI_FILE_PATH, @"");
+                
                 stunnelPath = IniFileUtil.ReadValue(INI_SECT_STUNNEL, INI_KEY_STUNNEL_PATH, scLauncherPath + INI_FILE_PATH, @"");
                 if (!stunnelPath.EndsWith(@"\"))
                     stunnelPath = stunnelPath + @"\";
@@ -109,10 +117,14 @@ namespace CUHKSelfCheckLauncher
                 string dailyRebootTimeStr = IniFileUtil.ReadValue(INI_SECT_SYSTEM, INI_KEY_DAILY_REBOOT_TIME_HHMM, scLauncherPath + INI_FILE_PATH, @"");
                 if (!String.IsNullOrEmpty(dailyRebootTimeStr))
                 {
-                    string rebootDateTimeStr = DateTime.Now.ToString("yyyyMMdd");
-                    rebootDateTimeStr += dailyRebootTimeStr;
-                    rebootDateTimeStr += "00";
-                    rebootDateTime = DateTime.ParseExact(rebootDateTimeStr, "yyyyMMddHHmmss", CultureInfo.InvariantCulture);
+                    string nextRebootDateTimeStr = DateTime.Now.ToString("yyyyMMdd");
+                    nextRebootDateTimeStr += dailyRebootTimeStr;
+                    nextRebootDateTimeStr += "00";
+                    nextRebootDateTime = DateTime.ParseExact(nextRebootDateTimeStr, "yyyyMMddHHmmss", CultureInfo.InvariantCulture);
+
+                    DateTime now = DateTime.Now;
+                    if (now >= nextRebootDateTime)
+                        nextRebootDateTime = nextRebootDateTime.AddDays(1);
                 }
 
                 string screenshotDpiScalingStr = IniFileUtil.ReadValue(INI_SECT_SYSTEM, INI_KEY_SCREENSHOT_DPI_SCALING, scLauncherPath + INI_FILE_PATH, @"");
@@ -155,6 +167,11 @@ namespace CUHKSelfCheckLauncher
             return disableIEProcess;
         }
 
+        public static string GetBibliothecaConfigServiceName()
+        {
+            return bbConfigServiceName;
+        }
+
         public static string GetSTunnelExe()
         {
             return stunnelBinPath + STUNNEL_EXE_NAME;
@@ -162,11 +179,22 @@ namespace CUHKSelfCheckLauncher
 
         public static void SetupSTunnel()
         {
-            string ipAddress = IPUtils.GetAllLocalIPv4(NetworkInterfaceType.Ethernet).FirstOrDefault();
+            string ipAddress = null;
+            for (int i = GET_IP_RETRY; i > 0 && ipAddress == null; i--)
+            {
+                ipAddress = IPUtils.GetAllLocalIPv4(NetworkInterfaceType.Ethernet).FirstOrDefault();
+            }
+
+            if (ipAddress == null)
+            {
+                Trace.TraceError("Failed to determine IP address at startup!");
+                return;
+            }
+            
             string terminalPEMFile = scLauncherPath + RESOURCES_PATH + ipAddress + @".pem";
             if (!File.Exists(terminalPEMFile))
             {
-                MessageBox.Show("File not found: " + terminalPEMFile);
+                Trace.TraceError("PEM file not found! " + terminalPEMFile);
                 return;
             }
 
@@ -191,9 +219,9 @@ namespace CUHKSelfCheckLauncher
             return shellPath;
         }
 
-        public static DateTime GetRebootDateTime()
+        public static DateTime GetNextRebootDateTime()
         {
-            return rebootDateTime;
+            return nextRebootDateTime;
         }
 
         public static double GetScreenshotDpiScaling()

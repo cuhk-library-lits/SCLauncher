@@ -16,3 +16,9 @@ csc -lib:"C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.0" ^
     -main:CUHKSelfCheckLauncher.SCLauncher ^
     *.cs
 
+csc -lib:"C:\Program Files\Reference Assemblies\Microsoft\Framework\v3.0" ^
+    -target:winexe ^
+    -out:bin\SRLauncher.exe ^
+    -main:CUHKSelfCheckLauncher.SRLauncher ^
+    *.cs
+
